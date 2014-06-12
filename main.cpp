@@ -1,16 +1,11 @@
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <sstream>
 #include <cstring>
 using namespace std;
 
-char buffer[469000];
-int size;
-int maxsize;
-
-void agregar_buffer(char c) {
-	buffer[size] = c;
-	size++;
-}
+string buffer;
 
 void to_char(int c) {
 	int i;
@@ -19,19 +14,19 @@ void to_char(int c) {
 
 	sprintf(s, "%d", c);
 	len = strlen(s);
-	for (i=0; i < len; i++) {
-		agregar_buffer(s[i]);
+	for (i = 0; i < len; i++) {
+		buffer.push_back(s[i]);
 	}
 }
 
 void agregar_clausula(int *c, int n) {
 	int i;
-	for (i=0; i < n; i++) {
+	for (i = 0; i < n; i++) {
 		to_char(c[i]);
-		agregar_buffer(' ');
+		buffer.push_back(' ');
 	}
 	to_char(0);
-	agregar_buffer('\n');
+	buffer.push_back('\n');
 }
 
 void desigualdad(int pos, int val) {
@@ -73,7 +68,7 @@ void diferencia(int i, int j) {
 
 	i++;
 	j++;
-	for (l=0; l<16; l++) {
+	for (l = 0; l < 16; l++) {
 		int ii = i;
 		int jj = j;
 		int *cc = c;
@@ -122,32 +117,38 @@ void dif_cubo(int c, int i, int j){
 int main(int argc, char const *argv[]) {
 	int i, j, c, f;
 	ofstream output;
+	ifstream file;
+	string line;
 
-	size = 0;
+	buffer.reserve(469000);
+	file.open("sudoku_10k.txt");
 	output.open("sudoku.cnf");
 
-	for (i=0; i < 9*9; i++)
+	// Se construyen las clausulas generales para cualquier sudoku
+	// Comprobación de valor entre 1 y 9
+	for (i = 0; i < 9*9; i++) {
     	rango_valor(i);
+	}
     // Comprobación de filas
-    for (f=0; f < 9; f++) {
-    	for (i=0; i<9; i++) {
-    		for (j=i+1; j<9; j++) {
+    for (f = 0; f < 9; f++) {
+    	for (i = 0; i < 9; i++) {
+    		for (j = i+1; j < 9; j++) {
     			diferencia(i+f*9, j+f*9);
     		}
     	}
     }
     // Comprobacioón de columnas
-    for (c=0; c<9; c++) {
-    	for (i=0; i<9; i++) {
-    		for (j=i+1; j<9; j++) {
+    for (c = 0; c < 9; c++) {
+    	for (i = 0; i < 9; i++) {
+    		for (j = i+1; j < 9; j++) {
     			diferencia(i*9+c, j*9+c);
     		}
     	}
     }
     // Comprobación para sub cubos
-	for (c=0; c<9; c++) {
-		for (i=0; i<9; i++) {
-			for (j=i+1; j<9; j++) {
+	for (c = 0; c < 9; c++) {
+		for (i = 0; i < 9; i++) {
+			for (j = i+1; j < 9; j++) {
 				if (i/3 == j/3)
 					continue;
 				if (i%3 == j%3)
@@ -157,9 +158,19 @@ int main(int argc, char const *argv[]) {
 		}
 	}
 	// Comprobación para los números fijos
+	getline(file, line);
+	stringstream str(line);
+	i = 0;
+	for (char c; str >> c;){
+		if(c != '.'){
+			cout << c << endl;
+			igualdad(i, c);
+		}
+		i++;
+	}
 
+	buffer.shrink_to_fit();
     output << buffer;
     output.close();	
-    cout << strlen(buffer) << endl;
 	return 0;
 }
